@@ -1,18 +1,17 @@
+# macOS
 .DS_Store
+
+# Local documents
 docs/
 
 # Java / Spring Boot
-server/.gradle/
-server/build/
-server/out/
+.gradle/
+build/
+out/
 *.class
-
-# macOS / Xcode
-macos/DerivedData/
-macos/build/
-*.xcuserstate
-*.xcuserdata/
-*.moved-aside
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
 # Local environment
 .env
@@ -20,6 +19,33 @@ macos/build/
 !.env.example
 application-local.yml
 
-# IDE
+# STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# IntelliJ IDEA
 .idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
 .vscode/
