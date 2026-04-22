@@ -4,7 +4,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.sidesignal'
+group = 'com'
 version = '0.0.1-SNAPSHOT'
 description = 'SideSignal'
 
@@ -19,17 +19,26 @@ repositories {
 }
 
 dependencies {
+	// REST API, 영속성, 마이그레이션, 검증, 운영 상태 확인을 위한 핵심 애플리케이션 의존성이다.
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+	// Flyway 마이그레이션과 런타임 DB 연결에 필요한 PostgreSQL 의존성이다.
 	implementation 'org.flywaydb:flyway-database-postgresql'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
-	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
+
+	// 로컬 개발과 포트폴리오 데모에서 API 문서를 확인하기 위한 의존성이다.
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+
+	// 도메인과 DTO 클래스의 반복 코드를 줄이기 위한 Lombok 의존성이다.
+	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// Spring Boot 테스트 슬라이스와 Testcontainers 기반 PostgreSQL 통합 테스트 의존성이다.
 	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
