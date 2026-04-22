@@ -1,0 +1,25 @@
+.DS_Store
+docs/
+
+# Java / Spring Boot
+server/.gradle/
+server/build/
+server/out/
+*.class
+
+# macOS / Xcode
+macos/DerivedData/
+macos/build/
+*.xcuserstate
+*.xcuserdata/
+*.moved-aside
+
+# Local environment
+.env
+.env.*
+!.env.example
+application-local.yml
+
+# IDE
+.idea/
+.vscode/
