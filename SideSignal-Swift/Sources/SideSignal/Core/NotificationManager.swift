@@ -1,19 +1,25 @@
 import Combine
+import os
 import UserNotifications
 
-class NotificationManager {
+class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
     private var center: UNUserNotificationCenter { .current() }
     private var cancellables = Set<AnyCancellable>()
+    private let logger = Logger(subsystem: "com.sidesignal.SideSignal", category: "NotificationManager")
 
     // 퇴근 시간 알림 식별자
     private let idSoon = "pair.departure.soon"
     private let idArrived = "pair.departure.arrived"
 
-    private init() {}
+    private override init() {
+        super.init()
+        center.delegate = self
+    }
 
     func start() {
+        center.delegate = self
         requestPermission()
 
         // SSEManager.pairSignal 변경 시 자동 재스케줄
@@ -37,6 +43,11 @@ class NotificationManager {
 
     // 콕 찌르기 즉시 알림
     func notifyPoke(from senderDisplayName: String) {
+        guard senderDisplayName.isEmpty == false else {
+            logger.error("poke_notification_skipped_empty_sender")
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = "콕 찌르기"
         content.body = "\(senderDisplayName)님이 콕 찌르셨어요 !"
@@ -48,13 +59,35 @@ class NotificationManager {
             trigger: nil
         )
 
-        center.add(request, withCompletionHandler: nil)
+        addNotificationRequest(request, logKey: "poke_notification")
+    }
+
+    // foreground 상태 알림 표시
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 
     // MARK: - Permission
 
     private func requestPermission() {
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
+            guard let self else { return }
+
+            if let error {
+                self.logger.error("notification_permission_failed error=\(error.localizedDescription, privacy: .public)")
+                return
+            }
+
+            if granted {
+                self.logger.info("notification_permission_granted")
+            } else {
+                self.logger.error("notification_permission_denied")
+            }
+        }
     }
 
     // MARK: - Schedule
@@ -98,7 +131,20 @@ class NotificationManager {
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
 
-        center.add(request, withCompletionHandler: nil)
+        addNotificationRequest(request, logKey: id)
+    }
+
+    private func addNotificationRequest(_ request: UNNotificationRequest, logKey: String) {
+        center.add(request) { [weak self] error in
+            guard let self else { return }
+
+            if let error {
+                self.logger.error("notification_add_failed key=\(logKey, privacy: .public), error=\(error.localizedDescription, privacy: .public)")
+                return
+            }
+
+            self.logger.info("notification_add_succeeded key=\(logKey, privacy: .public)")
+        }
     }
 
     private func cancelAll() {
