@@ -7,6 +7,7 @@ class SSEManager: ObservableObject, @unchecked Sendable {
     static let shared = SSEManager()
 
     @Published var pairSignal: SignalResponse? = nil
+    @Published var latestPoke: PokeReceivedEventPayload? = nil
     @Published var isConnected = false
     private(set) var partnerDisplayName: String? = nil
 
@@ -140,6 +141,11 @@ extension SSEManager: SSEClientDelegate {
                 message: pairSignal?.message,
                 updatedAt: updatedAt
             )
+        case .pokeReceived(let payload):
+            // 내가 보낸 콕 찌르기 이벤트 무시
+            guard let myId = currentUserId, payload.senderId != myId else { return }
+            latestPoke = payload
+            NotificationManager.shared.notifyPoke(from: payload.senderDisplayName)
         case .unknown:
             break
         }

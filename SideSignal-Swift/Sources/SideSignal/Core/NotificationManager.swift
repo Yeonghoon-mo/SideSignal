@@ -35,6 +35,22 @@ class NotificationManager {
         cancelAll()
     }
 
+    // 콕 찌르기 즉시 알림
+    func notifyPoke(from senderDisplayName: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "콕 찌르기"
+        content.body = "\(senderDisplayName)님이 콕 찌르셨어요 !"
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "poke.received.\(UUID().uuidString)",
+            content: content,
+            trigger: nil
+        )
+
+        center.add(request, withCompletionHandler: nil)
+    }
+
     // MARK: - Permission
 
     private func requestPermission() {

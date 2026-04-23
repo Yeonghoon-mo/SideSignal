@@ -4,6 +4,7 @@ enum SSEEvent {
     case connect
     case heartbeat
     case signalUpdated(SignalUpdatedEventPayload)
+    case pokeReceived(PokeReceivedEventPayload)
     case unknown(String, String)
 }
 
@@ -116,6 +117,14 @@ class SSEClient: NSObject, URLSessionDataDelegate {
                 decoder.dateDecodingStrategy = .iso8601
                 if let payload = try? decoder.decode(SignalUpdatedEventPayload.self, from: jsonData) {
                     delegate?.sseClient(self, didReceiveEvent: .signalUpdated(payload))
+                }
+            }
+        case "poke.received":
+            if let jsonData = data.data(using: .utf8) {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                if let payload = try? decoder.decode(PokeReceivedEventPayload.self, from: jsonData) {
+                    delegate?.sseClient(self, didReceiveEvent: .pokeReceived(payload))
                 }
             }
         default:

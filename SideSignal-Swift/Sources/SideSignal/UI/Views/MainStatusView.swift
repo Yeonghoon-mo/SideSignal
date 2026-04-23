@@ -7,7 +7,10 @@ struct MainStatusView: View {
 
     @State private var mySignal: SignalResponse? = nil
     @State private var isUpdating = false
+    @State private var isPoking = false
     @State private var errorMessage: String? = nil
+    @State private var pokeFeedbackMessage: String? = nil
+    @State private var pokeFeedbackColor: Color = .secondary
 
     // 퇴근 예정 입력 상태
     @State private var showDeparturePicker = false
@@ -24,6 +27,16 @@ struct MainStatusView: View {
             departureSection
             Divider().padding(.horizontal, 12)
             pairStatusSection
+
+            if let msg = pokeFeedbackMessage {
+                Text(msg)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(pokeFeedbackColor)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 2)
+                    .padding(.bottom, 4)
+                    .lineLimit(2)
+            }
 
             if let msg = errorMessage {
                 Text(msg)
@@ -47,6 +60,10 @@ struct MainStatusView: View {
         }
         .onDisappear {
             SSEManager.shared.stop()
+        }
+        .onReceive(sseManager.$latestPoke) { payload in
+            guard let payload else { return }
+            showPokeFeedback("\(payload.senderDisplayName)님이 콕 찌르셨어요 !", color: .pink)
         }
     }
 
@@ -218,6 +235,7 @@ struct MainStatusView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
+                pokeButton
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
@@ -252,6 +270,24 @@ struct MainStatusView: View {
         .menuStyle(.borderlessButton)
         .fixedSize()
         .disabled(isUpdating)
+    }
+
+    // MARK: - Poke
+
+    private var pokeButton: some View {
+        Button {
+            Task { await pokePartner() }
+        } label: {
+            Image(systemName: "hand.point.up.left.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(isPoking ? Color.secondary : Color.pink)
+                .frame(width: 26, height: 26)
+                .background(Color.pink.opacity(0.1))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isPoking)
+        .help("상대방 콕 찌르기")
     }
 
     // MARK: - Settings
@@ -314,6 +350,20 @@ struct MainStatusView: View {
         f.locale = Locale(identifier: "ko_KR")
         f.unitsStyle = .short
         return f
+    }
+
+    private func showPokeFeedback(_ message: String, color: Color) {
+        pokeFeedbackMessage = message
+        pokeFeedbackColor = color
+
+        Task {
+            try? await Task.sleep(for: .seconds(3))
+            await MainActor.run {
+                if pokeFeedbackMessage == message {
+                    pokeFeedbackMessage = nil
+                }
+            }
+        }
     }
 
     // MARK: - API
@@ -389,6 +439,26 @@ struct MainStatusView: View {
             await loadSignals()
         } catch {
             errorMessage = "퇴근 시간 초기화에 실패했습니다."
+        }
+    }
+
+    private func pokePartner() async {
+        guard let token = authManager.token else { return }
+        isPoking = true
+        errorMessage = nil
+        defer { isPoking = false }
+
+        do {
+            let response: PokeResponse = try await NetworkManager.shared.request(
+                path: "/pokes",
+                method: "POST",
+                token: token
+            )
+            showPokeFeedback("\(response.recipientDisplayName)님을 콕 찔렀어요 !", color: .pink)
+        } catch NetworkError.serverError(429) {
+            showPokeFeedback("잠시 후 다시 콕 찌를 수 있어요.", color: .orange)
+        } catch {
+            errorMessage = "콕 찌르기에 실패했습니다."
         }
     }
 }

@@ -84,6 +84,14 @@ struct PairSignalsResponse: Codable {
     let signals: [SignalResponse]
 }
 
+// MARK: - Poke
+
+// 콕 찌르기 요청 응답
+struct PokeResponse: Codable {
+    let recipientDisplayName: String
+    let sentAt: String
+}
+
 // MARK: - Signal Requests
 
 struct SignalUpdateRequest: Encodable {
@@ -98,5 +106,13 @@ struct SignalUpdatedEventPayload: Codable {
     let senderId: UUID
     let status: String
     let departureTime: String?
+    let occurredAt: String
+}
+
+// 콕 찌르기 수신 SSE payload
+struct PokeReceivedEventPayload: Codable {
+    let pairId: UUID
+    let senderId: UUID
+    let senderDisplayName: String
     let occurredAt: String
 }

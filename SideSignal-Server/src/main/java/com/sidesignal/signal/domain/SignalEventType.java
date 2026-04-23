@@ -2,5 +2,6 @@ package com.sidesignal.signal.domain;
 
 public enum SignalEventType {
     SIGNAL_UPDATED,
-    DEPARTURE_TIME_CLEARED
+    DEPARTURE_TIME_CLEARED,
+    POKE_SENT
 }

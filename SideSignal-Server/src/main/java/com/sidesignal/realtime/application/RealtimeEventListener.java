@@ -17,4 +17,11 @@ public class RealtimeEventListener {
     public void handleSignalUpdatedEvent(SignalUpdatedEventPayload payload) {
         realtimeService.sendSignalUpdate(payload);
     }
+
+    // 콕 찌르기 이벤트 비동기 전송
+    @Async
+    @EventListener
+    public void handlePokeReceivedEvent(PokeReceivedEventPayload payload) {
+        realtimeService.sendPokeReceived(payload);
+    }
 }

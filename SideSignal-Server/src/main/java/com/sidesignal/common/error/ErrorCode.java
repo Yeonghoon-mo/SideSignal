@@ -18,6 +18,7 @@ public enum ErrorCode {
     INVITE_ACCEPTED(HttpStatus.CONFLICT, "INVITE_ACCEPTED", "이미 수락된 초대 코드"),
     CANNOT_ACCEPT_OWN_INVITE(HttpStatus.BAD_REQUEST, "CANNOT_ACCEPT_OWN_INVITE", "자신의 초대 코드는 수락 불가"),
     PAIR_NOT_FOUND(HttpStatus.NOT_FOUND, "PAIR_NOT_FOUND", "페어 정보를 찾을 수 없음"),
+    POKE_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "POKE_COOLDOWN", "잠시 후 다시 콕 찌르기 가능"),
     CONFLICT(HttpStatus.CONFLICT, "CONFLICT", "요청 충돌"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류");
 

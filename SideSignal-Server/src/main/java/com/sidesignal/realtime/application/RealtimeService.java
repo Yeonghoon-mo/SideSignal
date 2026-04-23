@@ -81,6 +81,32 @@ public class RealtimeService {
         });
     }
 
+    // 콕 찌르기 발생 시 상대방에게 이벤트 전송
+    public void sendPokeReceived(PokeReceivedEventPayload payload) {
+        PairEntity pair = pairRepository.findById(payload.pairId())
+                .orElse(null);
+
+        if (pair == null) {
+            return;
+        }
+
+        UUID receiverId = pair.getFirstUser().getId().equals(payload.senderId())
+                ? pair.getSecondUser().getId()
+                : pair.getFirstUser().getId();
+
+        emitterRepository.findById(receiverId).ifPresent(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .id("evt_" + UUID.randomUUID())
+                        .name("poke.received")
+                        .data(payload));
+            } catch (IOException e) {
+                emitterRepository.deleteById(receiverId);
+                log.warn("SSE 콕 찌르기 이벤트 전송 실패, receiverId={}", receiverId, e);
+            }
+        });
+    }
+
     // 45초 주기로 연결된 모든 클라이언트에게 heartbeat 전송 (Nginx, AWS 등 프록시 타임아웃 방지)
     @Scheduled(fixedRate = 45000)
     public void sendHeartbeat() {
