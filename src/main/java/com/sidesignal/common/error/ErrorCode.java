@@ -12,6 +12,12 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한 없음"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "리소스 없음"),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 사용 중인 이메일"),
+    ALREADY_PAIRED(HttpStatus.CONFLICT, "ALREADY_PAIRED", "이미 짝이 맺어진 상태"),
+    INVITE_NOT_FOUND(HttpStatus.NOT_FOUND, "INVITE_NOT_FOUND", "유효하지 않은 초대 코드"),
+    INVITE_EXPIRED(HttpStatus.BAD_REQUEST, "INVITE_EXPIRED", "만료된 초대 코드"),
+    INVITE_ACCEPTED(HttpStatus.CONFLICT, "INVITE_ACCEPTED", "이미 수락된 초대 코드"),
+    CANNOT_ACCEPT_OWN_INVITE(HttpStatus.BAD_REQUEST, "CANNOT_ACCEPT_OWN_INVITE", "자신의 초대 코드는 수락 불가"),
+    PAIR_NOT_FOUND(HttpStatus.NOT_FOUND, "PAIR_NOT_FOUND", "페어 정보를 찾을 수 없음"),
     CONFLICT(HttpStatus.CONFLICT, "CONFLICT", "요청 충돌"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류");
 

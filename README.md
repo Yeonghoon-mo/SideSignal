@@ -54,14 +54,12 @@ SideSignal/
   README.md
   server/
   macos/
-  infra/
 ```
 
 | 디렉터리 | 역할 |
 |---|---|
 | `server` | Spring Boot 백엔드 애플리케이션 |
 | `macos` | SwiftUI 기반 macOS 메뉴바 앱 |
-| `infra` | 로컬 개발용 Docker Compose와 배포 관련 설정 |
 
 ## 주요 도메인
 

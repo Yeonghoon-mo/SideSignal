@@ -2,10 +2,10 @@ package com.sidesignal.common.security;
 
 import java.io.IOException;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -24,10 +24,10 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
     // 인가 실패 공통 JSON 응답
     @Override
     public void handle(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        AccessDeniedException accessDeniedException
-    ) throws IOException, ServletException {
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @NonNull AccessDeniedException accessDeniedException
+    ) throws IOException {
         response.setStatus(ErrorCode.FORBIDDEN.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

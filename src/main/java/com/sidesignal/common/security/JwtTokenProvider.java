@@ -76,16 +76,16 @@ public class JwtTokenProvider {
         validateExpiration(claims);
 
         return new AuthenticatedUser(
-            parseUserId(claims),
-            stringClaim(claims, "email")
+                parseUserId(claims),
+                stringClaim(claims, "email")
         );
     }
 
     // JWT header, claims, signature 조립
     private String encode(Map<String, Object> claims) {
         Map<String, Object> header = Map.of(
-            "alg", JWT_ALGORITHM,
-            "typ", "JWT"
+                "alg", JWT_ALGORITHM,
+                "typ", "JWT"
         );
         String encodedHeader = base64UrlEncode(toJson(header));
         String encodedClaims = base64UrlEncode(toJson(claims));
@@ -141,7 +141,7 @@ public class JwtTokenProvider {
 
     // JWT 만료 시각 검증
     private void validateExpiration(Map<String, Object> claims) {
-        Instant expiresAt = Instant.ofEpochSecond(longClaim(claims, "exp"));
+        Instant expiresAt = Instant.ofEpochSecond(longClaim(claims));
 
         if (!expiresAt.isAfter(Instant.now(clock))) {
             throw new JwtAuthenticationException("expired jwt");
@@ -224,14 +224,14 @@ public class JwtTokenProvider {
     }
 
     // 숫자 claim 추출
-    private static long longClaim(Map<String, Object> claims, String name) {
-        Object value = claims.get(name);
+    private static long longClaim(Map<String, Object> claims) {
+        Object value = claims.get("exp");
 
         if (value instanceof Number numberValue) {
             return numberValue.longValue();
         }
 
-        throw new JwtAuthenticationException("missing jwt claim: " + name);
+        throw new JwtAuthenticationException("missing jwt claim: " + "exp");
     }
 
 }
