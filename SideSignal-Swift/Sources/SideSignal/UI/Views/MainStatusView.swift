@@ -3,6 +3,7 @@ import SwiftUI
 struct MainStatusView: View {
     @EnvironmentObject var authManager: AuthManager
     @ObservedObject private var sseManager = SSEManager.shared
+    @ObservedObject private var launchManager = LaunchManager.shared
 
     @State private var mySignal: SignalResponse? = nil
     @State private var isUpdating = false
@@ -31,6 +32,9 @@ struct MainStatusView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 6)
             }
+
+            Divider().padding(.horizontal, 12)
+            settingsSection
 
             Divider()
             footerSection
@@ -248,6 +252,26 @@ struct MainStatusView: View {
         .menuStyle(.borderlessButton)
         .fixedSize()
         .disabled(isUpdating)
+    }
+
+    // MARK: - Settings
+
+    private var settingsSection: some View {
+        HStack {
+            Toggle(isOn: $launchManager.isLaunchAtLoginEnabled) {
+                HStack(spacing: 4) {
+                    Image(systemName: "bolt.fill")
+                        .font(.caption2)
+                    Text("로그인 시 자동 실행")
+                        .font(.caption)
+                }
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Footer
