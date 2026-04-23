@@ -68,7 +68,9 @@ public class SignalEntity {
     }
 
     public void update(SignalStatus status, Instant departureTime, String message) {
-        this.status = status;
+        if (status != null) {
+            this.status = status;
+        }
         this.departureTime = departureTime;
         this.message = message;
     }

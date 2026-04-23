@@ -28,6 +28,11 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
             HttpServletResponse response,
             @NonNull AccessDeniedException accessDeniedException
     ) throws IOException {
+        // 이미 작성된 응답 보호
+        if (response.isCommitted()) {
+            return;
+        }
+
         response.setStatus(ErrorCode.FORBIDDEN.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

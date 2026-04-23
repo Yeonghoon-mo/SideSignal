@@ -77,7 +77,7 @@ class SignalControllerIntegrationTests {
     @Test
     void updateMySignalUpdatesStatusAndDepartureTime() throws Exception {
         String now = "2026-04-23T18:00:00Z";
-        
+
         mockMvc.perform(patch("/api/v1/me/signal")
                 .header("Authorization", "Bearer " + user1Token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -92,6 +92,23 @@ class SignalControllerIntegrationTests {
             .andExpect(jsonPath("$.status").value("FOCUSING"))
             .andExpect(jsonPath("$.departureTime").value(now))
             .andExpect(jsonPath("$.message").value("Do not disturb"));
+    }
+
+    @Test
+    void updateMySignalCanUpdateDepartureTimeWithoutStatus() throws Exception {
+        String departureTime = "2026-04-23T19:30:00Z";
+
+        mockMvc.perform(patch("/api/v1/me/signal")
+                .header("Authorization", "Bearer " + user1Token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "departureTime": "%s"
+                    }
+                    """.formatted(departureTime)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("OFFLINE"))
+            .andExpect(jsonPath("$.departureTime").value(departureTime));
     }
 
     @Test

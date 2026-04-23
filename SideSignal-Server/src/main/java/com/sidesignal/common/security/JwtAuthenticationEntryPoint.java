@@ -28,6 +28,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             @NonNull AuthenticationException authException
     ) throws IOException {
+        // 이미 작성된 응답 보호
+        if (response.isCommitted()) {
+            return;
+        }
+
         response.setStatus(ErrorCode.UNAUTHORIZED.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

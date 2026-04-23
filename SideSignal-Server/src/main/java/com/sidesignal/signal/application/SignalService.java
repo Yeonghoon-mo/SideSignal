@@ -57,7 +57,7 @@ public class SignalService {
         
         // 이벤트 기록
         Map<String, Object> payload = new java.util.HashMap<>();
-        payload.put("status", request.status().name());
+        payload.put("status", signal.getStatus().name());
         if (request.departureTime() != null) {
             payload.put("departureTime", request.departureTime().toString());
         }
@@ -67,7 +67,7 @@ public class SignalService {
 
         recordSignalEvent(pair, signal, SignalEventType.SIGNAL_UPDATED, payload);
 
-        log.info("signal_updated userId={}, pairId={}, status={}", userId, pair.getId(), request.status());
+        log.info("signal_updated userId={}, pairId={}, status={}", userId, pair.getId(), signal.getStatus());
 
         return SignalResponse.from(signal);
     }
