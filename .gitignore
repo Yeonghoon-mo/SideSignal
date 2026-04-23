@@ -5,6 +5,7 @@
 SideSignal-Swift/**/DerivedData/
 SideSignal-Swift/**/Build/
 SideSignal-Swift/**/*.xcodeproj/xcuserdata/
+SideSignal-Swift/dist/
 
 # Java / Spring Boot (delegated to SideSignal-Server/.gitignore but safety at root)
 SideSignal-Server/build/
