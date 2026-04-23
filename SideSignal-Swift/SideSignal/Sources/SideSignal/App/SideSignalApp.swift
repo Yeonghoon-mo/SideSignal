@@ -1,34 +1,42 @@
 import SwiftUI
 
+enum AppScreen {
+    case login
+    case register
+    case main
+}
+
 @main
 struct SideSignalApp: App {
     @StateObject private var authManager = AuthManager.shared
-    
+
     var body: some Scene {
         MenuBarExtra {
-            MenuView()
+            AppMenuView()
                 .environmentObject(authManager)
         } label: {
-            HStack {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                Text("SideSignal")
-            }
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .imageScale(.medium)
         }
         .menuBarExtraStyle(.window)
     }
 }
 
-struct MenuView: View {
+struct AppMenuView: View {
     @EnvironmentObject var authManager: AuthManager
-    
+    @State private var screen: AppScreen = .login
+
     var body: some View {
-        VStack(spacing: 0) {
+        Group {
             if authManager.isAuthenticated {
                 MainStatusView()
+            } else if screen == .register {
+                RegisterView(screen: $screen)
             } else {
-                LoginView()
+                LoginView(screen: $screen)
             }
         }
-        .frame(width: 300)
+        .frame(width: 320)
+        .background(.ultraThinMaterial)
     }
 }

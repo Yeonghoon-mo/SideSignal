@@ -24,7 +24,6 @@ SideSignal은 자율출퇴근 환경에서 함께 일하는 두 사람이 조용
 | 데이터베이스 | PostgreSQL |
 | 인증 | JWT |
 | 실시간 통신 | Server-Sent Events |
-| 로컬 개발 | Docker Compose |
 
 ## 아키텍처
 
@@ -98,7 +97,6 @@ SideSignal/
 ## MVP 로드맵
 
 - Spring Boot 서버 프로젝트 구성
-- PostgreSQL Docker 개발 환경 구성
 - JWT 로그인 구현
 - 초대 코드 기반 pair 생성 구현
 - 상태 및 퇴근 시간 API 구현

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Auth
 struct AuthTokenResponse: Codable {
@@ -55,6 +56,17 @@ enum SignalStatus: String, Codable, CaseIterable {
         case .lunchAvailable: return "fork.knife"
         case .leavingSoon: return "figure.walk.arrival"
         case .offline: return "power"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .focusing: return .blue
+        case .inMeeting: return .orange
+        case .coffeeAvailable: return Color(red: 0.55, green: 0.35, blue: 0.15)
+        case .lunchAvailable: return .green
+        case .leavingSoon: return .purple
+        case .offline: return .gray
         }
     }
 }
