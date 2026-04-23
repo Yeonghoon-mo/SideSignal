@@ -27,6 +27,7 @@ class SSEManager: ObservableObject, @unchecked Sendable {
         reconnectDelay = 2
         connect()
         startSystemObservers()
+        NotificationManager.shared.start()
     }
 
     func stop() {
@@ -35,6 +36,7 @@ class SSEManager: ObservableObject, @unchecked Sendable {
         reconnectTask?.cancel()
         reconnectTask = nil
         stopSystemObservers()
+        NotificationManager.shared.stop()
         DispatchQueue.main.async { self.isConnected = false }
     }
 
