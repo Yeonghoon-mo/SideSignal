@@ -18,7 +18,7 @@ class SSEManager: ObservableObject, @unchecked Sendable {
     private var currentToken: String?
     private var currentUserId: UUID?
     private var reconnectDelay: TimeInterval = 2
-    private let baseURL = "http://localhost:8080/api/v1"
+    private let baseURL = APIEnvironment.baseURL
 
     private init() {}
 
