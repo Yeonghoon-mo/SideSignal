@@ -52,14 +52,14 @@ REST API는 명령과 최신 상태 조회를 담당하고, SSE는 서버에서 
 ```text
 SideSignal/
   README.md
-  server/
-  macos/
+  SideSignal-Server/
+  SideSignal-Swift/
 ```
 
 | 디렉터리 | 역할 |
 |---|---|
-| `server` | Spring Boot 백엔드 애플리케이션 |
-| `macos` | SwiftUI 기반 macOS 메뉴바 앱 |
+| `SideSignal-Server` | Spring Boot 백엔드 애플리케이션 |
+| `SideSignal-Swift` | SwiftUI 기반 macOS 메뉴바 앱 |
 
 ## 주요 도메인
 

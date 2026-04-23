@@ -1,51 +1,23 @@
+# SideSignal Root GitIgnore
+
 # macOS
 .DS_Store
+SideSignal-Swift/**/DerivedData/
+SideSignal-Swift/**/Build/
+SideSignal-Swift/**/*.xcodeproj/xcuserdata/
 
-# Local documents
-docs/
+# Java / Spring Boot (delegated to SideSignal-Server/.gitignore but safety at root)
+SideSignal-Server/build/
+SideSignal-Server/.gradle/
+SideSignal-Server/bin/
 
-# Java / Spring Boot
-.gradle/
-build/
-out/
-*.class
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-# Local environment
-.env
-.env.*
-!.env.example
-application-local.yml
-
-# STS
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-# IntelliJ IDEA
+# IDEs
 .idea/
-*.iws
 *.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-# VS Code
 .vscode/
+
+# Project Specific
+.memory/
+.claude/
+AGENTS.md
+docs/

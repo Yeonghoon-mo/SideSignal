@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sidesignal
+    username: sidesignal
+    password: sidesignal
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
