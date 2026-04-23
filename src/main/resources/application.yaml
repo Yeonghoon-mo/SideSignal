@@ -1,3 +1,9 @@
 spring:
   application:
     name: side-signal
+
+sidesignal:
+  jwt:
+    issuer: side-signal
+    secret: ${SIDESIGNAL_JWT_SECRET:local-development-jwt-secret-change-me-before-production}
+    access-token-expiration: PT2H
