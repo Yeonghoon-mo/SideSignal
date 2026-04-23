@@ -2,8 +2,13 @@ import SwiftUI
 
 struct MainStatusView: View {
     @EnvironmentObject var authManager: AuthManager
-    @State private var myStatus: SignalStatus = .offline
-    @State private var pairStatus: SignalStatus = .offline
+    @State private var mySignal: SignalResponse? = nil
+    @State private var pairSignal: SignalResponse? = nil
+    @State private var isUpdating = false
+    @State private var errorMessage: String? = nil
+
+    private var myStatus: SignalStatus { mySignal?.status ?? .offline }
+    private var pairStatus: SignalStatus { pairSignal?.status ?? .offline }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,12 +23,22 @@ struct MainStatusView: View {
             statusSection(
                 label: "상대방 상태",
                 status: pairStatus,
-                trailing: Text("방금 전")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                trailing: pairUpdatedLabel
             )
+
+            if let msg = errorMessage {
+                Text(msg)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
+
             Divider()
             footerSection
+        }
+        .task {
+            await loadSignals()
         }
     }
 
@@ -44,6 +59,10 @@ struct MainStatusView: View {
             }
 
             Spacer()
+
+            if isUpdating {
+                ProgressView().controlSize(.mini)
+            }
 
             Button {
                 authManager.logout()
@@ -90,8 +109,7 @@ struct MainStatusView: View {
         Menu {
             ForEach(SignalStatus.allCases, id: \.self) { status in
                 Button {
-                    myStatus = status
-                    // TODO: Update API
+                    Task { await updateStatus(status) }
                 } label: {
                     Label(status.displayName, systemImage: status.icon)
                 }
@@ -107,13 +125,27 @@ struct MainStatusView: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+        .disabled(isUpdating)
+    }
+
+    @ViewBuilder
+    private var pairUpdatedLabel: some View {
+        if let updatedAt = pairSignal?.updatedAt {
+            Text(updatedAt, formatter: relativeDateFormatter)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        } else {
+            Text("정보 없음")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     private var footerSection: some View {
         HStack {
-            Image(systemName: "dot.radiowaves.left.and.right")
+            Image(systemName: "heart.circle.fill")
+                .symbolRenderingMode(.multicolor)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
             Text("SideSignal")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -134,5 +166,52 @@ struct MainStatusView: View {
                     .font(.system(size: size * 0.42))
                     .foregroundStyle(status.color)
             )
+    }
+
+    private var relativeDateFormatter: RelativeDateTimeFormatter {
+        let f = RelativeDateTimeFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.unitsStyle = .short
+        return f
+    }
+
+    // MARK: - API
+
+    private func loadSignals() async {
+        guard let token = authManager.token,
+              let userId = authManager.currentUser?.id else { return }
+        do {
+            let res: PairSignalsResponse = try await NetworkManager.shared.request(
+                path: "/pairs/current/signals",
+                token: token
+            )
+            mySignal   = res.signals.first { $0.userId == userId }
+            pairSignal = res.signals.first { $0.userId != userId }
+        } catch {
+            // pair 없는 경우 등 무시 — PairingView에서 이미 체크함
+        }
+    }
+
+    private func updateStatus(_ status: SignalStatus) async {
+        guard let token = authManager.token else { return }
+        isUpdating = true
+        errorMessage = nil
+        defer { isUpdating = false }
+        do {
+            let body = SignalUpdateRequest(
+                status: status.rawValue,
+                departureTime: nil,
+                message: nil
+            )
+            let updated: SignalResponse = try await NetworkManager.shared.request(
+                path: "/me/signal",
+                method: "PATCH",
+                body: body,
+                token: token
+            )
+            mySignal = updated
+        } catch {
+            errorMessage = "상태 변경에 실패했습니다."
+        }
     }
 }

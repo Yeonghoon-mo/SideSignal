@@ -84,6 +84,14 @@ struct PairSignalsResponse: Codable {
     let signals: [SignalResponse]
 }
 
+// MARK: - Signal Requests
+
+struct SignalUpdateRequest: Encodable {
+    let status: String?
+    let departureTime: String?
+    let message: String?
+}
+
 // MARK: - SSE Events
 struct SignalUpdatedEventPayload: Codable {
     let pairId: UUID
