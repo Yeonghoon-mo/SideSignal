@@ -61,7 +61,10 @@ struct AppMenuView: View {
 
     private func checkPairStatus() async {
         guard let token = authManager.token,
-              let userId = authManager.currentUser?.id else { return }
+              let userId = authManager.currentUser?.id else {
+            screen = .pairing
+            return
+        }
         do {
             let pair: PairResponse = try await NetworkManager.shared.request(
                 path: "/pairs/current",
@@ -72,7 +75,8 @@ struct AppMenuView: View {
         } catch NetworkError.serverError(404) {
             screen = .pairing
         } catch {
-            screen = .main
+            // 네트워크 오류 등 — pair 확인 불가 상태에서 SSE 연결 시도 방지
+            screen = .pairing
         }
     }
 }

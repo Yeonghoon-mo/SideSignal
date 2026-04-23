@@ -147,7 +147,10 @@ extension SSEManager: SSEClientDelegate {
 
     func sseClient(_ client: SSEClient, didDisconnectWithError error: Error?) {
         isConnected = false
+        // 정상 취소 → 재연결 불필요
         if let urlErr = error as? URLError, urlErr.code == .cancelled { return }
+        // 4xx HTTP 오류 → 인증/페어 문제이므로 재연결해도 동일하게 실패
+        if case .httpError(let code)? = error as? SSEConnectionError, (400..<500).contains(code) { return }
         scheduleReconnect()
     }
 }

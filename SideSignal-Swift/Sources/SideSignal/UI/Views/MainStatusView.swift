@@ -36,11 +36,10 @@ struct MainStatusView: View {
             footerSection
         }
         .task {
+            guard let token = authManager.token,
+                  let userId = authManager.currentUser?.id else { return }
             await loadSignals()
-            SSEManager.shared.start(
-                token: authManager.token ?? "",
-                userId: authManager.currentUser?.id ?? UUID()
-            )
+            SSEManager.shared.start(token: token, userId: userId)
         }
         .onDisappear {
             SSEManager.shared.stop()

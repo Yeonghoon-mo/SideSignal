@@ -7,6 +7,11 @@ enum SSEEvent {
     case unknown(String, String)
 }
 
+// 재연결하면 안 되는 HTTP 오류 (4xx)
+enum SSEConnectionError: Error {
+    case httpError(Int)
+}
+
 protocol SSEClientDelegate: AnyObject {
     func sseClient(_ client: SSEClient, didReceiveEvent event: SSEEvent)
     func sseClient(_ client: SSEClient, didDisconnectWithError error: Error?)
@@ -17,44 +22,64 @@ class SSEClient: NSObject, URLSessionDataDelegate {
     private var task: URLSessionDataTask?
     private let url: URL
     private let token: String
-    
+
     weak var delegate: SSEClientDelegate?
-    
+
     init(url: URL, token: String) {
         self.url = url
         self.token = token
         super.init()
     }
-    
+
     func connect() {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        request.timeoutInterval = 3600 // 1 hour
-        
+        request.timeoutInterval = 3600
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 3600
         config.timeoutIntervalForResource = 3600
-        
+
         session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
         task = session?.dataTask(with: request)
         task?.resume()
     }
-    
+
     func disconnect() {
         task?.cancel()
         session?.invalidateAndCancel()
     }
-    
+
     // MARK: - URLSessionDataDelegate
+
+    // HTTP 상태 코드 확인: 4xx/5xx면 즉시 취소
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        guard let http = response as? HTTPURLResponse else {
+            completionHandler(.allow)
+            return
+        }
+        if (200...299).contains(http.statusCode) {
+            completionHandler(.allow)
+        } else {
+            completionHandler(.cancel)
+            delegate?.sseClient(self, didDisconnectWithError: SSEConnectionError.httpError(http.statusCode))
+        }
+    }
+
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         guard let string = String(data: data, encoding: .utf8) else { return }
-        
+
         let lines = string.components(separatedBy: .newlines)
         var currentEvent: String?
         var currentData: String?
-        
+
         for line in lines {
             if line.isEmpty {
                 if let eventName = currentEvent, let eventData = currentData {
@@ -74,11 +99,11 @@ class SSEClient: NSObject, URLSessionDataDelegate {
             }
         }
     }
-    
+
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         delegate?.sseClient(self, didDisconnectWithError: error)
     }
-    
+
     private func parseEvent(name: String, data: String) {
         switch name {
         case "connect":
