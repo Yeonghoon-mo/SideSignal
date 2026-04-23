@@ -34,7 +34,7 @@ class SSEClient: NSObject, URLSessionDataDelegate {
     func connect() {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.setValue("text/event-stream, application/json;q=0.9, */*;q=0.8", forHTTPHeaderField: "Accept")
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         request.timeoutInterval = 3600
 

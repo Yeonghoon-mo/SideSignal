@@ -4,7 +4,7 @@ import UserNotifications
 class NotificationManager {
     static let shared = NotificationManager()
 
-    private let center = UNUserNotificationCenter.current()
+    private var center: UNUserNotificationCenter { .current() }
     private var cancellables = Set<AnyCancellable>()
 
     // 퇴근 시간 알림 식별자

@@ -27,7 +27,7 @@ struct LoginView: View {
             Text("SideSignal")
                 .font(.title3.bold())
 
-            Text("조용히 연결되다")
+            Text("영훈이와 희연이의 상태 공유 앱 🤍")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -43,6 +43,8 @@ struct LoginView: View {
 
             SecureField("비밀번호", text: $password)
                 .textFieldStyle(.roundedBorder)
+                .submitLabel(.go)
+                .onSubmit(login)
 
             if let error = errorMessage {
                 Text(error)
@@ -84,6 +86,7 @@ struct LoginView: View {
     }
 
     private func login() {
+        guard !isLoading, !email.isEmpty, !password.isEmpty else { return }
         isLoading = true
         errorMessage = nil
 

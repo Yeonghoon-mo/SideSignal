@@ -10,6 +10,7 @@ enum AppScreen {
 @main
 struct SideSignalApp: App {
     @StateObject private var authManager = AuthManager.shared
+    @ObservedObject private var sseManager = SSEManager.shared
 
     var body: some Scene {
         MenuBarExtra {
@@ -32,10 +33,15 @@ struct AppMenuView: View {
     var body: some View {
         Group {
             if authManager.isAuthenticated {
-                if screen == .pairing {
-                    PairingView(screen: $screen)
-                } else {
+                switch screen {
+                case .main:
                     MainStatusView()
+                case .pairing:
+                    PairingView(screen: $screen)
+                default:
+                    // 페어 상태 확인 완료 대기
+                    ProgressView()
+                        .frame(height: 80)
                 }
             } else if screen == .register {
                 RegisterView(screen: $screen)
