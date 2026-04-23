@@ -19,9 +19,9 @@ struct LoginView: View {
 
     private var headerSection: some View {
         VStack(spacing: 6) {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 32, weight: .light))
-                .foregroundStyle(.blue)
+            Image(systemName: "heart.circle.fill")
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 36))
                 .padding(.bottom, 2)
 
             Text("SideSignal")

@@ -2,36 +2,34 @@ import SwiftUI
 
 struct MainStatusView: View {
     @EnvironmentObject var authManager: AuthManager
+    @ObservedObject private var sseManager = SSEManager.shared
+
     @State private var mySignal: SignalResponse? = nil
-    @State private var pairSignal: SignalResponse? = nil
     @State private var isUpdating = false
     @State private var errorMessage: String? = nil
 
+    // 퇴근 예정 입력 상태
+    @State private var showDeparturePicker = false
+    @State private var departureDateInput = Date()
+
     private var myStatus: SignalStatus { mySignal?.status ?? .offline }
-    private var pairStatus: SignalStatus { pairSignal?.status ?? .offline }
+    private var pairStatus: SignalStatus { sseManager.pairSignal?.status ?? .offline }
 
     var body: some View {
         VStack(spacing: 0) {
             headerSection
             Divider()
-            statusSection(
-                label: "내 상태",
-                status: myStatus,
-                trailing: statusChangeMenu
-            )
+            myStatusSection
+            departureSection
             Divider().padding(.horizontal, 12)
-            statusSection(
-                label: "상대방 상태",
-                status: pairStatus,
-                trailing: pairUpdatedLabel
-            )
+            pairStatusSection
 
             if let msg = errorMessage {
                 Text(msg)
                     .font(.caption)
                     .foregroundStyle(.red)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 4)
+                    .padding(.bottom, 6)
             }
 
             Divider()
@@ -39,10 +37,17 @@ struct MainStatusView: View {
         }
         .task {
             await loadSignals()
+            SSEManager.shared.start(
+                token: authManager.token ?? "",
+                userId: authManager.currentUser?.id ?? UUID()
+            )
+        }
+        .onDisappear {
+            SSEManager.shared.stop()
         }
     }
 
-    // MARK: - Sections
+    // MARK: - Header
 
     private var headerSection: some View {
         HStack(spacing: 10) {
@@ -65,6 +70,7 @@ struct MainStatusView: View {
             }
 
             Button {
+                SSEManager.shared.stop()
                 authManager.logout()
             } label: {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -78,32 +84,149 @@ struct MainStatusView: View {
         .padding(.vertical, 14)
     }
 
-    private func statusSection<T: View>(label: String, status: SignalStatus, trailing: T) -> some View {
+    // MARK: - My Status
+
+    private var myStatusSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
+            Text("내 상태")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
 
             HStack(spacing: 12) {
-                statusBadge(status: status, size: 36)
-
-                Text(status.displayName)
+                statusBadge(status: myStatus, size: 36)
+                Text(myStatus.displayName)
                     .font(.subheadline.weight(.medium))
-
                 Spacer()
-
-                trailing
+                statusChangeMenu
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(status.color.opacity(0.08))
+            .background(myStatus.color.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 12)
         }
         .padding(.top, 12)
         .padding(.bottom, 4)
     }
+
+    // MARK: - Departure Time
+
+    private var departureSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("퇴근 예정")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+
+            HStack(spacing: 10) {
+                Image(systemName: "clock")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.purple)
+
+                if let dt = mySignal?.departureTime {
+                    Text(dt, style: .time)
+                        .font(.subheadline.weight(.medium))
+                    Button {
+                        Task { await clearDepartureTime() }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                            .font(.system(size: 14))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("미설정")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                Button(showDeparturePicker ? "취소" : "변경") {
+                    if !showDeparturePicker {
+                        departureDateInput = mySignal?.departureTime ?? Date()
+                    }
+                    showDeparturePicker.toggle()
+                    errorMessage = nil
+                }
+                .font(.caption.bold())
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.purple.opacity(0.1))
+                .foregroundStyle(.purple)
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.purple.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 12)
+
+            if showDeparturePicker {
+                HStack(spacing: 10) {
+                    DatePicker("", selection: $departureDateInput, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .datePickerStyle(.automatic)
+                    Spacer()
+                    Button("설정") {
+                        showDeparturePicker = false
+                        Task { await updateDepartureTime(departureDateInput) }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 4)
+            }
+        }
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Pair Status
+
+    private var pairStatusSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("상대방 상태")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+
+            HStack(spacing: 12) {
+                statusBadge(status: pairStatus, size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pairStatus.displayName)
+                        .font(.subheadline.weight(.medium))
+                    if let dt = sseManager.pairSignal?.departureTime {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                            Text(dt, style: .time)
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if let updatedAt = sseManager.pairSignal?.updatedAt {
+                    Text(updatedAt, formatter: relativeDateFormatter)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(pairStatus.color.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 12)
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Status Change Menu
 
     private var statusChangeMenu: some View {
         Menu {
@@ -128,18 +251,7 @@ struct MainStatusView: View {
         .disabled(isUpdating)
     }
 
-    @ViewBuilder
-    private var pairUpdatedLabel: some View {
-        if let updatedAt = pairSignal?.updatedAt {
-            Text(updatedAt, formatter: relativeDateFormatter)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        } else {
-            Text("정보 없음")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-    }
+    // MARK: - Footer
 
     private var footerSection: some View {
         HStack {
@@ -150,6 +262,12 @@ struct MainStatusView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
             Spacer()
+            Circle()
+                .fill(sseManager.isConnected ? Color.green : Color.red)
+                .frame(width: 6, height: 6)
+            Text(sseManager.isConnected ? "연결됨" : "연결 끊김")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -185,10 +303,10 @@ struct MainStatusView: View {
                 path: "/pairs/current/signals",
                 token: token
             )
-            mySignal   = res.signals.first { $0.userId == userId }
-            pairSignal = res.signals.first { $0.userId != userId }
+            mySignal = res.signals.first { $0.userId == userId }
+            SSEManager.shared.pairSignal = res.signals.first { $0.userId != userId }
         } catch {
-            // pair 없는 경우 등 무시 — PairingView에서 이미 체크함
+            // pair 없는 경우 등 무시
         }
     }
 
@@ -198,11 +316,7 @@ struct MainStatusView: View {
         errorMessage = nil
         defer { isUpdating = false }
         do {
-            let body = SignalUpdateRequest(
-                status: status.rawValue,
-                departureTime: nil,
-                message: nil
-            )
+            let body = SignalUpdateRequest(status: status.rawValue, departureTime: nil, message: nil)
             let updated: SignalResponse = try await NetworkManager.shared.request(
                 path: "/me/signal",
                 method: "PATCH",
@@ -212,6 +326,46 @@ struct MainStatusView: View {
             mySignal = updated
         } catch {
             errorMessage = "상태 변경에 실패했습니다."
+        }
+    }
+
+    private func updateDepartureTime(_ date: Date) async {
+        guard let token = authManager.token else { return }
+        isUpdating = true
+        errorMessage = nil
+        defer { isUpdating = false }
+        do {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            formatter.timeZone = TimeZone.current
+            let timeString = formatter.string(from: date)
+            let body = SignalUpdateRequest(status: nil, departureTime: timeString, message: nil)
+            let updated: SignalResponse = try await NetworkManager.shared.request(
+                path: "/me/signal",
+                method: "PATCH",
+                body: body,
+                token: token
+            )
+            mySignal = updated
+        } catch {
+            errorMessage = "퇴근 시간 설정에 실패했습니다."
+        }
+    }
+
+    private func clearDepartureTime() async {
+        guard let token = authManager.token else { return }
+        isUpdating = true
+        errorMessage = nil
+        defer { isUpdating = false }
+        do {
+            try await NetworkManager.shared.requestPlain(
+                path: "/me/signal/departure-time",
+                method: "DELETE",
+                token: token
+            )
+            await loadSignals()
+        } catch {
+            errorMessage = "퇴근 시간 초기화에 실패했습니다."
         }
     }
 }

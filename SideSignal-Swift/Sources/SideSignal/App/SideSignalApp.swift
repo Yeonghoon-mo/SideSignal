@@ -45,10 +45,17 @@ struct AppMenuView: View {
         }
         .frame(width: 320)
         .background(.ultraThinMaterial)
+        .fontDesign(.rounded)
         .task(id: authManager.isAuthenticated) {
             guard authManager.isAuthenticated, !pairCheckDone else { return }
             pairCheckDone = true
             await checkPairStatus()
+        }
+        .onChange(of: authManager.isAuthenticated) { _, isAuth in
+            if !isAuth {
+                pairCheckDone = false
+                screen = .login
+            }
         }
     }
 
