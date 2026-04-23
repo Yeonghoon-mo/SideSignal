@@ -8,6 +8,7 @@ class SSEManager: ObservableObject, @unchecked Sendable {
 
     @Published var pairSignal: SignalResponse? = nil
     @Published var isConnected = false
+    private(set) var partnerDisplayName: String? = nil
 
     private var client: SSEClient?
     private var reconnectTask: Task<Void, Never>?
@@ -20,6 +21,11 @@ class SSEManager: ObservableObject, @unchecked Sendable {
     private let baseURL = "http://localhost:8080/api/v1"
 
     private init() {}
+
+    func setPartner(from pair: PairResponse, myUserId: UUID) {
+        let partner = pair.firstUser.id == myUserId ? pair.secondUser : pair.firstUser
+        partnerDisplayName = partner.displayName
+    }
 
     func start(token: String, userId: UUID) {
         currentToken = token

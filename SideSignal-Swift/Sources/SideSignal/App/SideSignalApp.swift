@@ -60,12 +60,14 @@ struct AppMenuView: View {
     }
 
     private func checkPairStatus() async {
-        guard let token = authManager.token else { return }
+        guard let token = authManager.token,
+              let userId = authManager.currentUser?.id else { return }
         do {
-            let _: PairResponse = try await NetworkManager.shared.request(
+            let pair: PairResponse = try await NetworkManager.shared.request(
                 path: "/pairs/current",
                 token: token
             )
+            SSEManager.shared.setPartner(from: pair, myUserId: userId)
             screen = .main
         } catch NetworkError.serverError(404) {
             screen = .pairing

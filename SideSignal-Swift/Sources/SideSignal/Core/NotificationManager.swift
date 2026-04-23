@@ -45,6 +45,7 @@ class NotificationManager {
 
     private func scheduleNotifications(for departureTime: Date) {
         let now = Date()
+        let name = SSEManager.shared.partnerDisplayName ?? "파트너"
 
         // 10분 전 예고 알림
         let tenMinBefore = departureTime.addingTimeInterval(-10 * 60)
@@ -52,8 +53,8 @@ class NotificationManager {
             addNotification(
                 id: idSoon,
                 at: tenMinBefore,
-                title: "파트너 퇴근 예정",
-                body: "10분 후 파트너가 퇴근할 예정이에요."
+                title: "\(name) 퇴근 예정",
+                body: "10분 후 \(name)이(가) 퇴근할 예정이에요."
             )
         }
 
@@ -62,8 +63,8 @@ class NotificationManager {
             addNotification(
                 id: idArrived,
                 at: departureTime,
-                title: "파트너 퇴근 시간",
-                body: "파트너의 퇴근 예정 시간이 됐어요."
+                title: "\(name) 퇴근 시간",
+                body: "\(name)의 퇴근 예정 시간이 됐어요."
             )
         }
     }

@@ -217,16 +217,19 @@ struct PairingView: View {
     }
 
     private func acceptCode() async {
-        guard let token = authManager.token, !inputCode.isEmpty else { return }
+        guard let token = authManager.token,
+              let userId = authManager.currentUser?.id,
+              !inputCode.isEmpty else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            let _: PairResponse = try await NetworkManager.shared.request(
+            let pair: PairResponse = try await NetworkManager.shared.request(
                 path: "/pair-invites/\(inputCode)/accept",
                 method: "POST",
                 token: token
             )
+            SSEManager.shared.setPartner(from: pair, myUserId: userId)
             screen = .main
         } catch NetworkError.serverError(404) {
             errorMessage = "유효하지 않거나 만료된 코드입니다."

@@ -10,28 +10,30 @@ SideSignal은 자율출퇴근 환경에서 함께 일하는 두 사람이 조용
 |---|---|
 | 상태 공유 | 집중 중, 회의 중, 커피 가능, 점심 가능, 퇴근 준비 상태를 공유한다. |
 | 퇴근 시간 공유 | 각자의 예상 퇴근 시간을 입력하고 상대방 화면에 동기화한다. |
-| 로컬 알림 | 상대방의 퇴근 시간이 가까워지면 macOS 알림을 표시한다. |
-| 초대 코드 페어링 | 한 사용자가 초대 코드를 만들고, 다른 사용자가 입력해서 pair를 생성한다. |
 | 실시간 동기화 | 상태 변경 이벤트를 SSE로 전달한다. |
+| 로컬 알림 | 상대방의 퇴근 시간 10분 전과 도달 시 macOS 알림을 표시한다. |
+| 초대 코드 페어링 | 한 사용자가 초대 코드를 만들고, 다른 사용자가 입력해서 pair를 생성한다. |
 | 재연결 복구 | 절전 해제나 네트워크 변경 후 SSE를 다시 연결하고 최신 상태를 조회한다. |
 
 ## 기술 스택
 
 | 영역 | 기술 |
 |---|---|
-| macOS 앱 | SwiftUI, MenuBarExtra |
-| 백엔드 | Spring Boot |
+| macOS 앱 | SwiftUI, MenuBarExtra, UserNotifications |
+| 백엔드 | Spring Boot 3, Java 21, Gradle |
 | 데이터베이스 | PostgreSQL |
 | 인증 | JWT |
 | 실시간 통신 | Server-Sent Events |
+| 마이그레이션 | Flyway |
+| 테스트 | JUnit 5, AssertJ, Mockito, Testcontainers |
 
 ## 아키텍처
 
 ```text
 macOS App
   | REST API
-  | - 로그인
-  | - 초대 코드 생성/수락
+  | - 로그인 / 회원가입
+  | - 초대 코드 생성 / 수락
   | - 상태 및 퇴근 시간 변경
   |
   | SSE
@@ -51,14 +53,36 @@ REST API는 명령과 최신 상태 조회를 담당하고, SSE는 서버에서 
 ```text
 SideSignal/
   README.md
-  SideSignal-Server/
-  SideSignal-Swift/
+  SideSignal-Server/   # Spring Boot 백엔드
+  SideSignal-Swift/    # SwiftUI macOS 앱
 ```
 
-| 디렉터리 | 역할 |
-|---|---|
-| `SideSignal-Server` | Spring Boot 백엔드 애플리케이션 |
-| `SideSignal-Swift` | SwiftUI 기반 macOS 메뉴바 앱 |
+## 실행 방법
+
+### 사전 요구 사항
+
+- Java 21
+- PostgreSQL (localhost:5432, database: `sidesignal`, user: `sidesignal`)
+- macOS 14 이상 (클라이언트)
+
+### 서버 실행
+
+```bash
+cd SideSignal-Server
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+서버는 포트 8080에서 시작된다. Flyway가 자동으로 스키마를 생성한다.
+
+### macOS 앱 실행
+
+```bash
+cd SideSignal-Swift
+swift build
+.build/debug/SideSignal
+```
+
+또는 Xcode에서 `SideSignal-Swift/Package.swift`를 열어 실행한다.
 
 ## 주요 도메인
 
@@ -81,6 +105,7 @@ SideSignal/
 | `GET` | `/api/v1/pairs/current` | 현재 pair 조회 |
 | `GET` | `/api/v1/me/signal` | 내 상태 조회 |
 | `PATCH` | `/api/v1/me/signal` | 내 상태 및 퇴근 시간 변경 |
+| `DELETE` | `/api/v1/me/signal/departure-time` | 퇴근 시간 초기화 |
 | `GET` | `/api/v1/pairs/current/signals` | pair 멤버들의 최신 상태 조회 |
 | `GET` | `/api/v1/pairs/current/events` | SSE 이벤트 구독 |
 
@@ -94,17 +119,18 @@ SideSignal/
 5. 퇴근 시간이 가까우면 MacBook B가 로컬 알림을 예약한다.
 ```
 
-## MVP 로드맵
+## 백엔드 패키지 구조
 
-- Spring Boot 서버 프로젝트 구성
-- JWT 로그인 구현
-- 초대 코드 기반 pair 생성 구현
-- 상태 및 퇴근 시간 API 구현
-- SSE 이벤트 스트림 구현
-- SwiftUI 메뉴바 앱 구성
-- macOS 로컬 알림 구현
-- 절전 해제와 네트워크 변경 후 재연결 처리
-- 실행 방법과 화면 예시 정리
+```text
+com.sidesignal
+  auth        # 인증 (JWT 로그인, 회원가입)
+  pair        # 페어링 (초대 코드 생성 / 수락)
+  signal      # 상태 관리 (상태 변경, 퇴근 시간)
+  realtime    # SSE 이벤트 스트림
+  common      # 공통 설정, 보안, 에러 처리
+```
+
+각 도메인은 `api / application / domain / infrastructure` 4개 레이어로 구성된다.
 
 ## 포트폴리오 포인트
 
@@ -112,5 +138,6 @@ SideSignal/
 - PostgreSQL 도메인 모델링
 - JWT 인증과 pair 단위 권한 검증
 - SSE 기반 실시간 동기화
+- Testcontainers 통합 테스트
 - macOS 클라이언트와 백엔드 연동
-- 네트워크 복구와 최신 상태 재조회 흐름
+- 네트워크 복구와 절전 해제 후 SSE 재연결 처리
