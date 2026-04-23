@@ -1,9 +1,11 @@
 package com.sidesignal.signal.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,7 @@ import com.sidesignal.common.error.BusinessException;
 import com.sidesignal.common.error.ErrorCode;
 import com.sidesignal.pair.domain.PairEntity;
 import com.sidesignal.pair.infrastructure.PairRepository;
+import com.sidesignal.realtime.application.SignalUpdatedEventPayload;
 import com.sidesignal.signal.api.PairSignalsResponse;
 import com.sidesignal.signal.api.SignalResponse;
 import com.sidesignal.signal.api.UpdateSignalRequest;
@@ -32,6 +35,7 @@ public class SignalService {
     private final SignalEventRepository signalEventRepository;
     private final PairRepository pairRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 내 상태 조회 (없으면 생성해서 반환)
     @Transactional
@@ -59,7 +63,7 @@ public class SignalService {
             payload.put("message", request.message());
         }
 
-        recordSignalEvent(pair, signal.getUser(), SignalEventType.SIGNAL_UPDATED, payload);
+        recordSignalEvent(pair, signal, SignalEventType.SIGNAL_UPDATED, payload);
 
         return SignalResponse.from(signal);
     }
@@ -73,7 +77,7 @@ public class SignalService {
         signal.clearDepartureTime();
         
         // 이벤트 기록
-        recordSignalEvent(pair, signal.getUser(), SignalEventType.DEPARTURE_TIME_CLEARED, Map.of());
+        recordSignalEvent(pair, signal, SignalEventType.DEPARTURE_TIME_CLEARED, Map.of());
     }
 
     // 페어 멤버들의 최신 상태 조회
@@ -108,8 +112,16 @@ public class SignalService {
             });
     }
 
-    private void recordSignalEvent(PairEntity pair, UserEntity sender, SignalEventType type, Map<String, Object> payload) {
-        SignalEventEntity event = new SignalEventEntity(pair, sender, type, payload);
+    private void recordSignalEvent(PairEntity pair, SignalEntity signal, SignalEventType type, Map<String, Object> payload) {
+        SignalEventEntity event = new SignalEventEntity(pair, signal.getUser(), type, payload);
         signalEventRepository.save(event);
+
+        eventPublisher.publishEvent(new SignalUpdatedEventPayload(
+            pair.getId(),
+            signal.getUser().getId(),
+            signal.getStatus().name(),
+            signal.getDepartureTime(),
+            Instant.now()
+        ));
     }
 }

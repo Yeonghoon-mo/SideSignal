@@ -1,0 +1,31 @@
+package com.sidesignal.realtime.infrastructure;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+@Repository
+public class SseEmitterRepository {
+
+    private final Map<UUID, SseEmitter> emitters = new ConcurrentHashMap<>();
+
+    public void save(UUID userId, SseEmitter emitter) {
+        emitters.put(userId, emitter);
+    }
+
+    public void deleteById(UUID userId) {
+        emitters.remove(userId);
+    }
+
+    public Optional<SseEmitter> findById(UUID userId) {
+        return Optional.ofNullable(emitters.get(userId));
+    }
+    
+    public Map<UUID, SseEmitter> findAll() {
+        return emitters;
+    }
+}
