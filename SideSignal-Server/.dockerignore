@@ -1,0 +1,8 @@
+.gradle/
+build/
+bin/
+.idea/
+*.iml
+.DS_Store
+HELP.md
+src/main/resources/application-local.yaml

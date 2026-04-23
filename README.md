@@ -20,7 +20,7 @@ SideSignal은 자율출퇴근 환경에서 함께 일하는 두 사람이 조용
 | 영역 | 기술 |
 |---|---|
 | macOS 앱 | SwiftUI, MenuBarExtra, UserNotifications |
-| 백엔드 | Spring Boot 3, Java 21, Gradle |
+| 백엔드 | Spring Boot 4, Java 21, Gradle |
 | 데이터베이스 | PostgreSQL |
 | 인증 | JWT |
 | 실시간 통신 | Server-Sent Events |
@@ -83,6 +83,40 @@ swift build
 ```
 
 또는 Xcode에서 `SideSignal-Swift/Package.swift`를 열어 실행한다.
+
+## Railway 배포
+
+SideSignal은 모노레포 구조이므로 Railway 서비스의 Root Directory를 `SideSignal-Server`로 지정한다. 그러면 Railway가 `SideSignal-Server/Dockerfile`을 기준으로 서버 이미지를 빌드한다.
+
+### 서비스 구성
+
+| 항목 | 값 |
+|---|---|
+| Service Root Directory | `SideSignal-Server` |
+| Builder | Dockerfile 자동 감지 |
+| Healthcheck Path | `/actuator/health` |
+| Public Domain | Railway 서비스에서 Generate Domain 실행 |
+| Active Profile | `prod` |
+
+### 환경변수 매핑
+
+Railway 프로젝트에 PostgreSQL 서비스를 추가한 뒤, 서버 서비스 Variables에 아래 값을 설정한다.
+
+| 변수 | 값 |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `PGHOST` | `${{Postgres.PGHOST}}` |
+| `PGPORT` | `${{Postgres.PGPORT}}` |
+| `PGDATABASE` | `${{Postgres.PGDATABASE}}` |
+| `PGUSER` | `${{Postgres.PGUSER}}` |
+| `PGPASSWORD` | `${{Postgres.PGPASSWORD}}` |
+| `SIDESIGNAL_JWT_SECRET` | 32자 이상 임의 문자열 |
+
+서버 배포 후 생성된 Railway Public Domain을 macOS 앱 실행 환경의 `SIDESIGNAL_API_BASE_URL`에 `/api/v1`까지 포함해서 지정한다.
+
+```bash
+SIDESIGNAL_API_BASE_URL=https://your-service.up.railway.app/api/v1 .build/debug/SideSignal
+```
 
 ## 주요 도메인
 
